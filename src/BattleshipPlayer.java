@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.Arrays;
 import java.util.Random;
 
 public class BattleshipPlayer extends Thread{
@@ -106,6 +107,7 @@ public class BattleshipPlayer extends Thread{
             while (!input.equals("GAME OVER")){
                 if(reciever){
                     //Receiving message
+                    //gives the player something to look at while they wait for the fire command
                     if(!first){
                         //handles incoming messages after the first fire message
                         input2 = in.readLine();
@@ -114,22 +116,19 @@ public class BattleshipPlayer extends Thread{
                             String str[] = input2.split(":");
                             String str2[] = str[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1] = "0";
-                            System.out.println(input2);
                         }
                         else if(input2.matches("HIT:[A-Z]\\d*")){
                             String str[] = input2.split(":");
                             String str2[] = str[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1] = "X";
-                            System.out.println(input2);
                         }
-                        else if(input2.matches("SUNK:[A-Z]\\d*:\\w+")){
+                        else if(input2.matches("SUNK:[A-Z]\\d*:.*")){
                             String str[] = input2.split(":");
                             String str2[] = str[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1] = "X";
-                            System.out.println(input2);
+                            System.out.println("YOU SUNK MY "+ str[2]);
                         }
                     }
-                    //gives the player something to look at while they wait for the fire command
                     printGames();
                     System.out.println("WAITING FOR OTHER PLAYERS TURN");
                     //Handles firing
@@ -257,16 +256,20 @@ public class BattleshipPlayer extends Thread{
     }
 
     private void printGames(){
-        System.out.print("YOUR GAME");
+        System.out.print("YOUR GAME\n");
+        System.out.print("  1  2  3  4  5  6  7  8  9 10");
         for(int x = 0; x < 10; x ++){
             System.out.print("\n");
+            System.out.print(numberToLetter(String.valueOf(x + 1)));
             for(int y = 0; y < 10; y++){
                 System.out.print("["+playerGame[x][y]+ "]");
             }
         }
-        System.out.print("\n\nENEMY COMMANDERS GAME");
+        System.out.print("\n\nENEMY COMMANDERS GAME\n");
+        System.out.print("  1  2  3  4  5  6  7  8  9 10");
         for(int x = 0; x < 10; x ++){
             System.out.print("\n");
+            System.out.print(numberToLetter(String.valueOf(x + 1)));
             for(int y = 0; y < 10; y++){
                 System.out.print("["+enemyGame[x][y]+ "]");
             }
@@ -283,7 +286,13 @@ public class BattleshipPlayer extends Thread{
             return "MISS:" + coords;
         }
         else{
-            output = battleships[Integer.parseInt(playerGame[coord1][coord2]) - 1].recordHit(Integer.toString(coord1) + Integer.toString(coord2));
+            Battleship hitShip = null;
+            for(Battleship battleship: battleships){
+                if(battleship.hasCoord(Integer.toString(coord1) +":"+ Integer.toString(coord2))){
+                    hitShip = battleship;
+                }
+            }
+            output = hitShip.recordHit(Integer.toString(coord1) +":"+ Integer.toString(coord2));
             if(output.matches("HIT:")){
                 playerGame[coord1][coord2] = "X";
                 return output + coords;
@@ -303,7 +312,7 @@ public class BattleshipPlayer extends Thread{
                 //not all battleships are sunk
                 else{
                     String [] str2 = output.split(":" );
-                    return str2[0] + coords + str2[1];
+                    return str2[0] +":"+ coords +":"+ str2[1];
                 }
             }
         }
@@ -418,16 +427,27 @@ public class BattleshipPlayer extends Thread{
             this.coords = coords;
         }
 
-        public String recordHit(String coordinate){
-            int counter = 0;
+        public boolean hasCoord(String coordinate){
             for(String coord: coords){
                 if(coord.matches(coordinate)){
-                    coord = null;
+                    return true;
                 }
-                if(coord == null){
+            }
+            return false;
+        }
+
+        public String recordHit(String coordinate){
+            int counter = 0;
+            for(int i = 0; i < size; i ++){
+                System.out.println(coords[i] + ":???:" + coordinate);
+                if(coords[i].matches(coordinate)){
+                    coords[i] = "-1:-1";
+                }
+                if(coords[i].matches("-1:-1")){
                     counter += 1;
                 }
             }
+            System.out.println(counter);
             if(counter == size){
                 sunk = true;
                 return "SUNK:" + name;
