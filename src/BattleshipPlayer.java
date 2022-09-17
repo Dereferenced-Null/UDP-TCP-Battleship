@@ -70,6 +70,7 @@ public class BattleshipPlayer extends Thread{
                 clientSocket = new Socket(host, port);
             }
             sessionHandler(clientSocket);
+            sleep(1000);
             clientSocket.close();
             serverSocket.close();
         }
@@ -115,7 +116,7 @@ public class BattleshipPlayer extends Thread{
                         if(input2 == null){
                             System.out.println("GAME OVER");
                             GAMEOVER = true;
-                            break;
+                            continue;
                         }
                         if(input2.matches("MISS:[A-Z]\\d*")){
                             String str[] = input2.split(":");
@@ -139,7 +140,7 @@ public class BattleshipPlayer extends Thread{
                             enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1] = "X";
                             System.out.println("GAME OVER");
                             GAMEOVER = true;
-                            break;
+                            continue;
                         }
                     }
                     printGames();
@@ -158,21 +159,21 @@ public class BattleshipPlayer extends Thread{
                     printGames();
                     System.out.println("YOUR TURN");
                     while(!sent){
+                        System.out.print("FIRE:");
                         sInput = systemIn.readLine();
-                        if(sInput.matches("FIRE:[A-Z]\\d*")){
-                            String str[] = sInput.split(":");
-                            String str2[] = str[1].split("", 2);
-                            if(!str2[0].matches("[ABCDEFGHIJ]") || !str2[1].matches("\\d+")){
+                        if(sInput.matches("[A-Z]\\d*")){
+                            String str[] = sInput.split("", 2);
+                            if(!str[0].matches("[ABCDEFGHIJ]") || !str[1].matches("\\d+")){
                                 System.out.println("INVALID INPUT");
                             }
-                            else if(Integer.parseInt(letterToNumber(str2[0])) > 10 || Integer.parseInt(str2[1]) > 10){
+                            else if(Integer.parseInt(letterToNumber(str[0])) > 10 || Integer.parseInt(str[1]) > 10){
                                 System.out.println("INVALID GRID SPACE");
                             }
-                            else if(enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1].matches("X")){
+                            else if(enemyGame[Integer.parseInt(letterToNumber(str[0])) - 1][Integer.parseInt(str[1]) - 1].matches("X")){
                                 System.out.println("WE ALREADY HIT A SHIP THERE COMMANDER");
                             }
                             else{
-                                out.println(sInput);
+                                out.println("FIRE:" + sInput);
                                 sent = true;
                             }
                         }
@@ -298,7 +299,8 @@ public class BattleshipPlayer extends Thread{
         String str[] = coords.split("",2);
         int coord1 = Integer.parseInt(letterToNumber(str[0])) - 1;
         int coord2 = Integer.parseInt(str[1]) - 1;
-        if(playerGame[coord1][coord2].matches("~")){
+        if(playerGame[coord1][coord2].matches("~") || playerGame[coord1][coord2].matches("0")){
+            playerGame[coord1][coord2] = "0";
             return "MISS:" + coords;
         }
         else{
@@ -322,6 +324,7 @@ public class BattleshipPlayer extends Thread{
                 }
                 //all battleships are sunk
                 if (counter == battleships.length) {
+                    playerGame[coord1][coord2] = "X";
                     String [] str2 = output.split(":");
                     GAMEOVER = true;
                     return "GAME OVER:" + coords + str2[1];
