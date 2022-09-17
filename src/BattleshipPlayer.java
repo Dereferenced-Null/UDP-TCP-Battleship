@@ -159,7 +159,6 @@ public class BattleshipPlayer extends Thread{
                     System.out.println("YOUR TURN");
                     while(!sent){
                         sInput = systemIn.readLine();
-                        out.println(sInput);
                         if(sInput.matches("FIRE:[A-Z]\\d*")){
                             String str[] = sInput.split(":");
                             String str2[] = str[1].split("", 2);
