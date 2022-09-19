@@ -1,10 +1,12 @@
+// Programmer: Luke Haigh / c3303309
+// Course: SENG 4500
+// Last Modified: 26/08/2022
+// Program Description:Tax Client for user to server interaction with a Tax Server
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Enumeration;
 import java.util.Random;
 
 public class BattleshipPlayer extends Thread{
@@ -368,7 +370,7 @@ public class BattleshipPlayer extends Thread{
                 InetAddress address = InetAddress.getByName(broadcastAddress);
                 socket.setBroadcast(true);
                 while(true){
-                    Thread.sleep(1);
+                    Thread.sleep(30000);
                     DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, broadcastPort);
                     socket.send(packet);
                     System.out.println("Sent");
