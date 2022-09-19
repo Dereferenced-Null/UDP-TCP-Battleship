@@ -54,7 +54,6 @@ public class BattleshipPlayer extends Thread{
             listener.start();
             ServerSocket serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(10);
-            System.out.println("Here");
             while(!done && clientSocket == null){
                 try{
                     clientSocket = serverSocket.accept();
@@ -163,6 +162,7 @@ public class BattleshipPlayer extends Thread{
                     while(!sent){
                         System.out.print("FIRE:");
                         sInput = systemIn.readLine();
+                        sent = true;
                         if(sInput.matches("[A-Z]\\d*")){
                             String str[] = sInput.split("", 2);
                             if(!str[0].matches("[ABCDEFGHIJ]") || !str[1].matches("\\d+")){
@@ -188,6 +188,10 @@ public class BattleshipPlayer extends Thread{
                     sent = false;
                 }
             }
+        }
+        catch(NullPointerException n){
+            //this means that the other socket is closing
+            GAMEOVER = true;
         }
         catch(Exception e){
             System.out.println(e);
@@ -364,7 +368,6 @@ public class BattleshipPlayer extends Thread{
         }
 
         public void run(){
-            System.out.println("Here2");
             String message = "NEW PLAYER:" + port;
             try{
                 InetAddress address = InetAddress.getByName(broadcastAddress);
@@ -373,7 +376,6 @@ public class BattleshipPlayer extends Thread{
                     Thread.sleep(30000);
                     DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, broadcastPort);
                     socket.send(packet);
-                    System.out.println("Sent");
                 }
             }
             catch(InterruptedException e){
