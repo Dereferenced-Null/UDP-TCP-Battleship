@@ -7,9 +7,6 @@ import java.util.Random;
 
 public class BattleshipPlayer extends Thread{
 
-    //note: THIS SHOULD NEVER BE WRITTEN TO BY ANY NON LISTENER CLASS WITHOUT
-    // A SEMAPHORE AS THIS WILL RESULT IN A RACE CONDITION
-    protected InetAddress host = null;
     protected ServerSocket serverSocket = null;
     protected Socket socket = null;
     protected boolean reciever = false;
@@ -18,14 +15,11 @@ public class BattleshipPlayer extends Thread{
     protected int broadcastPort;
     private String broadcastAddress;
     protected int playerPort;
+    protected String host;
     protected int port;
     private String [][] playerGame = new String[10][10];
     private String [][] enemyGame = new String[10][10];
     Battleship[] battleships = new Battleship[5];
-
-    //create player game
-    //create enemy game
-    //create battleship class
 
     public BattleshipPlayer(String broadcastAddress, String broadcastPort){
         Random rand = new Random();
@@ -47,6 +41,12 @@ public class BattleshipPlayer extends Thread{
 
     public void run(){
         try{
+            try{
+                host = InetAddress.getLocalHost().getHostAddress();
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
             Socket clientSocket = null;
             DatagramSocket socket = new DatagramSocket(port);
             socket.setBroadcast(true);
@@ -370,7 +370,7 @@ public class BattleshipPlayer extends Thread{
                 InetAddress address = InetAddress.getByName(broadcastAddress);
                 socket.setBroadcast(true);
                 while(port == 0){
-                    Thread.sleep(30000);
+                    Thread.sleep(1);
                     DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, broadcastPort);
                     socket.send(packet);
                 }
@@ -410,7 +410,7 @@ public class BattleshipPlayer extends Thread{
                     String str[] = output.split(":");
                     if(str[0].equals("NEW PLAYER")){
                         port = Integer.parseInt(str[1]);
-                        host = dataPacket.getAddress();
+                        host = dataPacket.getAddress().toString();
                         done = true;
                         reciever = true;
                         sender.interrupt();
