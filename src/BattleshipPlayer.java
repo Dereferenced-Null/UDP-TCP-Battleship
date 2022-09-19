@@ -114,11 +114,6 @@ public class BattleshipPlayer extends Thread{
                     if(!first){
                         //handles incoming messages after the first fire message
                         input2 = in.readLine();
-                        if(input2 == null){
-                            System.out.println("GAME OVER");
-                            GAMEOVER = true;
-                            continue;
-                        }
                         if(input2.matches("MISS:[A-Z]\\d*")){
                             String str[] = input2.split(":");
                             String str2[] = str[1].split("", 2);
@@ -150,7 +145,15 @@ public class BattleshipPlayer extends Thread{
                     input = in.readLine();
                     if(input.matches("FIRE:[A-Z]\\d*")){
                         String [] str = input.split(":");
-                        out.println(calculateHit(str[1]));
+                        String output = calculateHit(str[1]);
+                        if(input2.matches("GAME OVER:[A-Z]\\d*:.*")){
+                            String str2[] = input2.split(":");
+                            String str3[] = str[1].split("", 2);
+                            enemyGame[Integer.parseInt(letterToNumber(str3[0])) - 1][Integer.parseInt(str3[1]) - 1] = "X";
+                            System.out.println("GAME OVER");
+                            GAMEOVER = true;
+                            continue;
+                        }
                     }
                     reciever = false;
                     first = false;
@@ -162,7 +165,6 @@ public class BattleshipPlayer extends Thread{
                     while(!sent){
                         System.out.print("FIRE:");
                         sInput = systemIn.readLine();
-                        sent = true;
                         if(sInput.matches("[A-Z]\\d*")){
                             String str[] = sInput.split("", 2);
                             if(!str[0].matches("[ABCDEFGHIJ]") || !str[1].matches("\\d+")){
@@ -191,6 +193,7 @@ public class BattleshipPlayer extends Thread{
         }
         catch(NullPointerException n){
             //this means that the other socket is closing
+            System.out.println("GAME OVER");
             GAMEOVER = true;
         }
         catch(Exception e){
