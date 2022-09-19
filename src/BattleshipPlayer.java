@@ -3,6 +3,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Enumeration;
 import java.util.Random;
 
 public class BattleshipPlayer extends Thread{
@@ -14,8 +16,8 @@ public class BattleshipPlayer extends Thread{
     protected boolean GAMEOVER = false;
     protected int broadcastPort;
     private String broadcastAddress;
+    protected InetAddress host;
     protected int playerPort;
-    protected String host;
     protected int port;
     private String [][] playerGame = new String[10][10];
     private String [][] enemyGame = new String[10][10];
@@ -41,14 +43,8 @@ public class BattleshipPlayer extends Thread{
 
     public void run(){
         try{
-            try{
-                host = InetAddress.getLocalHost().getHostAddress();
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
             Socket clientSocket = null;
-            DatagramSocket socket = new DatagramSocket(port);
+            DatagramSocket socket = new DatagramSocket(broadcastPort);
             socket.setBroadcast(true);
             Sender sender = new Sender(socket);
             Listener listener = new Listener(socket, sender);
@@ -56,6 +52,7 @@ public class BattleshipPlayer extends Thread{
             listener.start();
             ServerSocket serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(10);
+            System.out.println("Here");
             while(!done && clientSocket == null){
                 try{
                     clientSocket = serverSocket.accept();
@@ -365,14 +362,16 @@ public class BattleshipPlayer extends Thread{
         }
 
         public void run(){
+            System.out.println("Here2");
             String message = "NEW PLAYER:" + port;
             try{
                 InetAddress address = InetAddress.getByName(broadcastAddress);
                 socket.setBroadcast(true);
-                while(port == 0){
+                while(true){
                     Thread.sleep(1);
                     DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, broadcastPort);
                     socket.send(packet);
+                    System.out.println("Sent");
                 }
             }
             catch(InterruptedException e){
@@ -403,14 +402,14 @@ public class BattleshipPlayer extends Thread{
                 String output;
                 while(!done){
                     socket.receive(dataPacket);
-                    if(dataPacket.getPort() == playerPort){
-                        continue;
-                    }
                     output = new String(buffer, 0, dataPacket.getLength());
                     String str[] = output.split(":");
+                    if(str[1].matches(Integer.toString(port))){
+                        continue;
+                    }
                     if(str[0].equals("NEW PLAYER")){
-                        port = Integer.parseInt(str[1]);
-                        host = dataPacket.getAddress().toString();
+                        playerPort = Integer.parseInt(str[1]);
+                        host = dataPacket.getAddress();
                         done = true;
                         reciever = true;
                         sender.interrupt();
