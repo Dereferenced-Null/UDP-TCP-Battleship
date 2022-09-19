@@ -9,15 +9,16 @@ public class BattleshipPlayer extends Thread{
 
     //note: THIS SHOULD NEVER BE WRITTEN TO BY ANY NON LISTENER CLASS WITHOUT
     // A SEMAPHORE AS THIS WILL RESULT IN A RACE CONDITION
-    protected int port;
     protected InetAddress host = null;
     protected ServerSocket serverSocket = null;
     protected Socket socket = null;
     protected boolean reciever = false;
     protected boolean done = false;
     protected boolean GAMEOVER = false;
-    private int initalPort;
-
+    protected int broadcastPort;
+    private String broadcastAddress;
+    protected int playerPort;
+    protected int port;
     private String [][] playerGame = new String[10][10];
     private String [][] enemyGame = new String[10][10];
     Battleship[] battleships = new Battleship[5];
@@ -26,9 +27,11 @@ public class BattleshipPlayer extends Thread{
     //create enemy game
     //create battleship class
 
-    public BattleshipPlayer(){
+    public BattleshipPlayer(String broadcastAddress, String broadcastPort){
         Random rand = new Random();
-        initalPort = rand.nextInt(5001,6000);
+        this.port = rand.nextInt(5001, 6000);
+        this.broadcastPort = Integer.parseInt(broadcastPort);
+        this.broadcastAddress = broadcastAddress;
         battleships[0] = new Battleship(5, "AIRCRAFT CARRIER");
         battleships[1] = new Battleship(4, "BATTLESHIP");
         battleships[2] = new Battleship(3, "CRUISER");
@@ -38,20 +41,20 @@ public class BattleshipPlayer extends Thread{
     }
 
     public static void main(String [] args) {
-        BattleshipPlayer player = new BattleshipPlayer();
+        BattleshipPlayer player = new BattleshipPlayer(args[0], args[1]);
         player.run();
     }
 
     public void run(){
         try{
             Socket clientSocket = null;
-            DatagramSocket socket = new DatagramSocket(initalPort);
+            DatagramSocket socket = new DatagramSocket(port);
             socket.setBroadcast(true);
             Sender sender = new Sender(socket);
             Listener listener = new Listener(socket, sender);
             sender.start();
             listener.start();
-            ServerSocket serverSocket = new ServerSocket(initalPort);
+            ServerSocket serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(10);
             while(!done && clientSocket == null){
                 try{
@@ -65,9 +68,9 @@ public class BattleshipPlayer extends Thread{
             listener.interrupt();
             sender.interrupt();
             socket.close();
-            System.out.println(port + ":" + reciever);
+            System.out.println(playerPort + ":" + reciever);
             if(reciever){
-                clientSocket = new Socket(host, port);
+                clientSocket = new Socket(host, playerPort);
             }
             sessionHandler(clientSocket);
             sleep(1000);
@@ -362,17 +365,14 @@ public class BattleshipPlayer extends Thread{
         }
 
         public void run(){
-            String message = "NEW PLAYER:" + initalPort;
-            System.out.println(initalPort);
+            String message = "NEW PLAYER:" + port;
             try{
-                InetAddress address = InetAddress.getByName("255.255.255.255");
+                InetAddress address = InetAddress.getByName(broadcastAddress);
                 socket.setBroadcast(true);
                 while(port == 0){
-                    Thread.sleep(1000); //should be 30000
-                    for(int targetPort = 5000; targetPort < 6001; targetPort ++){
-                        DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, targetPort);
-                        socket.send(packet);
-                    }
+                    Thread.sleep(30000);
+                    DatagramPacket packet = new DatagramPacket(message.getBytes(), message.length(), address, broadcastPort);
+                    socket.send(packet);
                 }
             }
             catch(InterruptedException e){
@@ -403,7 +403,7 @@ public class BattleshipPlayer extends Thread{
                 String output;
                 while(!done){
                     socket.receive(dataPacket);
-                    if(dataPacket.getPort() == initalPort){
+                    if(dataPacket.getPort() == playerPort){
                         continue;
                     }
                     output = new String(buffer, 0, dataPacket.getLength());
