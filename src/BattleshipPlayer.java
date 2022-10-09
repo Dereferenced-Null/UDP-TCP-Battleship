@@ -146,9 +146,9 @@ public class BattleshipPlayer extends Thread{
                     if(input.matches("FIRE:[A-Z]\\d*")){
                         String [] str = input.split(":");
                         String output = calculateHit(str[1]);
-                        if(input2.matches("GAME OVER:[A-Z]\\d*:.*")){
-                            String str2[] = input2.split(":");
-                            String str3[] = str[1].split("", 2);
+                        if(output.matches("GAME OVER:[A-Z]\\d*:.*")){
+                            String str2[] = output.split(":");
+                            String str3[] = str2[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str3[0])) - 1][Integer.parseInt(str3[1]) - 1] = "X";
                             System.out.println("GAME OVER");
                             GAMEOVER = true;
@@ -192,7 +192,7 @@ public class BattleshipPlayer extends Thread{
             }
         }
         catch(NullPointerException n){
-            //this means that the other socket is closing
+            //this means that the other socket is closing indicating the game is over
             System.out.println("GAME OVER");
             GAMEOVER = true;
         }
@@ -202,6 +202,7 @@ public class BattleshipPlayer extends Thread{
         }
     }
 
+    //Creates both player 1 and player 2's games locally and places player 1's battleships
     private void createGame(String[][] playerGame, String[][] enemyGame){
         Random rand = new Random();
         for(int x = 0; x < 10; x ++){
@@ -315,11 +316,11 @@ public class BattleshipPlayer extends Thread{
         else{
             Battleship hitShip = null;
             for(Battleship battleship: battleships){
-                if(battleship.hasCoord(Integer.toString(coord1) +":"+ Integer.toString(coord2))){
+                if(battleship.hasCoord(coord1 +":"+coord2)){
                     hitShip = battleship;
                 }
             }
-            output = hitShip.recordHit(Integer.toString(coord1) +":"+ Integer.toString(coord2));
+            output = hitShip.recordHit(coord1 +":"+ coord2);
             if(output.matches("HIT:")){
                 playerGame[coord1][coord2] = "X";
                 return output + coords;
