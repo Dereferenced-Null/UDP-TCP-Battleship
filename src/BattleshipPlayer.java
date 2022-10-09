@@ -1,7 +1,9 @@
 // Programmer: Luke Haigh / c3303309
 // Course: SENG 4500
-// Last Modified: 26/08/2022
-// Program Description:Tax Client for user to server interaction with a Tax Server
+// Last Modified: 10/10/2022
+// Program Description: Battleship player program for playing battleship over a network. Uses a threaded implementation to
+// create a UDP port connection which facilitates a TCP connection on which the game is played using battleships represented
+// by a battleship class on matrices representing each player's game.
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -10,9 +12,6 @@ import java.net.*;
 import java.util.Random;
 
 public class BattleshipPlayer extends Thread{
-
-    protected ServerSocket serverSocket = null;
-    protected Socket socket = null;
     protected boolean reciever = false;
     protected boolean done = false;
     protected boolean GAMEOVER = false;
@@ -21,10 +20,11 @@ public class BattleshipPlayer extends Thread{
     protected InetAddress host;
     protected int playerPort;
     protected int port;
-    private String [][] playerGame = new String[10][10];
-    private String [][] enemyGame = new String[10][10];
+    private final String [][] playerGame = new String[10][10];
+    private final String [][] enemyGame = new String[10][10];
     Battleship[] battleships = new Battleship[5];
 
+    //Constructor, creates the battleship player, players games and ships
     public BattleshipPlayer(String broadcastAddress, String broadcastPort){
         Random rand = new Random();
         this.port = rand.nextInt(5001, 6000);
@@ -112,7 +112,6 @@ public class BattleshipPlayer extends Thread{
             while (!GAMEOVER){
                 if(reciever){
                     //Receiving message
-                    //gives the player something to look at while they wait for the fire command
                     if(!first){
                         //handles incoming messages after the first fire message
                         input2 = in.readLine();
@@ -140,6 +139,8 @@ public class BattleshipPlayer extends Thread{
                             continue;
                         }
                     }
+                    //print both games
+                    //gives the player something to look at while they wait for their turn
                     printGames();
                     System.out.println("WAITING FOR OTHER PLAYERS TURN");
                     //Handles firing
@@ -166,6 +167,7 @@ public class BattleshipPlayer extends Thread{
                     while(!sent){
                         System.out.print("FIRE:");
                         sInput = systemIn.readLine();
+                        //Input error checking
                         if(sInput.matches("[A-Z]\\d*")){
                             String str[] = sInput.split("", 2);
                             if(!str[0].matches("[ABCDEFGHIJ]") || !str[1].matches("\\d+")){
@@ -196,13 +198,14 @@ public class BattleshipPlayer extends Thread{
             //this means that the other socket is closing indicating the game is over
             GAMEOVER = true;
         }
+        //general exception
         catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
         }
     }
 
-    //Creates both player 1 and player 2's games locally and places player 1's battleships
+    //Creates both player 1 and player 2's games locally and places local player's battleships
     private void createGame(String[][] playerGame, String[][] enemyGame){
         Random rand = new Random();
         for(int x = 0; x < 10; x ++){
@@ -282,6 +285,7 @@ public class BattleshipPlayer extends Thread{
         }
     }
 
+    //prints the matrices representing the states of both players games
     private void printGames(){
         System.out.print("YOUR GAME\n");
         System.out.print("  1  2  3  4  5  6  7  8  9 10");
@@ -304,6 +308,7 @@ public class BattleshipPlayer extends Thread{
         System.out.println("\n");
     }
 
+    //checks if the coord selected by the other player is occupied or not and determines if any or all ships are sunk
     private String calculateHit(String coords){
         String output;
         String str[] = coords.split("",2);
@@ -350,12 +355,14 @@ public class BattleshipPlayer extends Thread{
 
     }
 
+    //converts a number to ASCII letter for the Coord system
     private String numberToLetter(String number){
         int num = Integer.parseInt(number);
         num += 64;
         return String.valueOf((char)num);
     }
 
+    //converts an ASCII letter to a number for the Coord system
     private String letterToNumber(String letter){
         char[] letters = letter.toCharArray();
         int num = (int)letters[0];
@@ -363,6 +370,7 @@ public class BattleshipPlayer extends Thread{
         return Integer.toString(num);
     }
 
+    //Message sender thread, handles all sent messages
     private class Sender extends Thread{
 
         DatagramSocket socket;
@@ -371,6 +379,7 @@ public class BattleshipPlayer extends Thread{
             this.socket = socket;
         }
 
+        //sends a message every 30 seconds until interrupted
         public void run(){
             String message = "NEW PLAYER:" + port;
             try{
@@ -394,15 +403,21 @@ public class BattleshipPlayer extends Thread{
         }
     }
 
+    //Message Listening Thread, recieves all messages
     private class Listener extends Thread{
 
         DatagramSocket socket;
+        //sender thread
         Sender sender;
+        //Constructor
         Listener(DatagramSocket socket, Sender sender){
             this.sender = sender;
             this.socket = socket;
         }
 
+        //Listens on the selected port until a valid new player packet is received
+        //and then extracts port and IP to allow for TCP connection, interrupts sender
+        //and terminates
         public void run(){
             try{
                 byte[] buffer = new byte[1024];
@@ -433,28 +448,22 @@ public class BattleshipPlayer extends Thread{
         }
     }
 
+    //Battleship class for storing ship coords and hit information
     private class Battleship{
 
-        //hitpoints, set on battleship creation
         private int size;
         //location of battleship
         private String [] coords;
         private String name;
         private boolean sunk = false;
 
+        //Constructor
         public Battleship(int size, String name){
             this.size = size;
             this.name = name;
         }
 
-        public int getSize(){
-            return size;
-        }
-
-        public void setCoords(String[] coords){
-            this.coords = coords;
-        }
-
+        //checks if this ship is present in the parameter's Coord
         public boolean hasCoord(String coordinate){
             for(String coord: coords){
                 if(coord.matches(coordinate)){
@@ -464,6 +473,7 @@ public class BattleshipPlayer extends Thread{
             return false;
         }
 
+        //Records a hit to the battleship
         public String recordHit(String coordinate){
             int counter = 0;
             for(int i = 0; i < size; i ++){
@@ -483,10 +493,17 @@ public class BattleshipPlayer extends Thread{
             }
         }
 
+        //Getters and Setters
         public boolean getSunk(){
             return sunk;
         }
+
+        public int getSize(){
+            return size;
+        }
+
+        public void setCoords(String[] coords){
+            this.coords = coords;
+        }
     }
-
-
 }
