@@ -87,6 +87,8 @@ public class BattleshipPlayer extends Thread{
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             //GAME LOOP
             playGame(reciever, in, out);
+            printGames();
+            System.out.println("GAME OVER");
             out.close();
             in.close();
         }
@@ -134,7 +136,6 @@ public class BattleshipPlayer extends Thread{
                             String str[] = input2.split(":");
                             String str2[] = str[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str2[0])) - 1][Integer.parseInt(str2[1]) - 1] = "X";
-                            System.out.println("GAME OVER");
                             GAMEOVER = true;
                             continue;
                         }
@@ -150,10 +151,10 @@ public class BattleshipPlayer extends Thread{
                             String str2[] = output.split(":");
                             String str3[] = str2[1].split("", 2);
                             enemyGame[Integer.parseInt(letterToNumber(str3[0])) - 1][Integer.parseInt(str3[1]) - 1] = "X";
-                            System.out.println("GAME OVER");
                             GAMEOVER = true;
                             continue;
                         }
+                        out.println(output);
                     }
                     reciever = false;
                     first = false;
@@ -193,7 +194,6 @@ public class BattleshipPlayer extends Thread{
         }
         catch(NullPointerException n){
             //this means that the other socket is closing indicating the game is over
-            System.out.println("GAME OVER");
             GAMEOVER = true;
         }
         catch(Exception e){
